@@ -14,6 +14,21 @@ jobs:
         id: get-master-commit-hash
         run: echo ::set-output name=git-hash::${{ github.sha }}
 
+      - id: fetch
+        uses: actions/github-script@v5
+        with:
+          script: |
+            let {data: pr} = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            return pr.head.sha;
+
+      - name: echo ref and sha
+        run: |
+          echo '${{ steps.fetch.outputs.result }}'
+
       - name: get upstream branch
         id: get-upstream-branch
         env:
