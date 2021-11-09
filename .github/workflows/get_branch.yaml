@@ -17,6 +17,7 @@ jobs:
       - id: fetch
         uses: actions/github-script@v5
         with:
+          result-encoding: string
           script: |
             let {data: pr} = await github.rest.pulls.get({
               owner: context.repo.owner,
@@ -25,27 +26,16 @@ jobs:
             });
             return pr.head.sha;
 
-      - name: echo ref and sha
-        run: |
-          echo '${{ steps.fetch.outputs.result }}'
-
-      - name: get upstream branch
-        id: get-upstream-branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "::set-output name=git-hash::$(curl -H "Authorization: token ${GITHUB_TOKEN}" ${{ github.event.issue.pull_request.url }} | jq '.head.sha' | sed 's/\"//g')"
-
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: ${{ steps.get-upstream-branch.outputs.git-hash }}
+          ref: ${{ steps.fetch.outputs.result }}
 
       - name: Comment by action
         uses: actions/github-script@v5
         with:
           script: |
-            const commentBody = "PR (${{ steps.get-upstream-branch.outputs.git-hash }}) ${{ steps.get-upstream-branch.outputs.branch-name }} \n master (${{ steps.get-master-commit-hash.outputs.git-hash }})"
+            const commentBody = "PR (${{ steps.fetch.outputs.result }})\n master (${{ steps.get-master-commit-hash.outputs.git-hash }})"
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
